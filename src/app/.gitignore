@@ -1,0 +1,3 @@
+node_modules
+# remove .env from control version to production environment
+# .env 

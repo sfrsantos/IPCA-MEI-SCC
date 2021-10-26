@@ -1,0 +1,27 @@
+version: "3"
+
+
+services:
+  db:
+    container_name: scc-db
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - "mydb:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_USER: scc_user
+      POSTGRES_PASSWORD: scc_secret
+      POSTGRES_DB: db_scc
+  app:
+    container_name: scc-app
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./src/app/:/usr/src/app/"
+
+  
+
+volumes:
+  mydb:
