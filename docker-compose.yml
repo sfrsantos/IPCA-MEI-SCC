@@ -19,6 +19,8 @@ services:
       - "3000:3000"
     volumes:
       - "./src/app/:/usr/src/app/"
+    depends_on:
+      - db
 
   
 
