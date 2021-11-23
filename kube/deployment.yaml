@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-api
+spec: 
+  selector:
+    matchLabels:
+      app: nodejs-api
+  template:
+    metadata:
+      labels:
+        app: nodejs-api
+    spec:
+      containers:
+      - name: scc-app
+        image: ghcr.io/sfrsantos/ipca-mei-scc/nodejs-app-image:latest
+        imagePullPolicy: Never
+        resources:
+          requests:
+            memory: "25Mi"
+            cpu: "250m"
+          limits:
+            memory: "50Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 3000

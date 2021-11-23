@@ -2,23 +2,14 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "api application",
-  "main": "index.js",
   "scripts": {
     "start": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@gitlab.com/Sergi0Sant0s/multimedia_backend.git"
-  },
   "author": "Sérgio Santos",
   "license": "ISC",
-  "bugs": {
-    "url": "https://gitlab.com/Sergi0Sant0s/multimedia_backend/issues"
-  },
-  "homepage": "https://gitlab.com/Sergi0Sant0s/multimedia_backend#readme",
   "dependencies": {
-    "@prisma/client": "^3.3.0",
+    "@prisma/client": "^3.5.0",
     "bcrypt": "^5.0.0",
     "celebrate": "^12.1.1",
     "crypto-js": "^4.1.1",
@@ -27,8 +18,8 @@
     "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.7",
-    "prisma": "^3.3.0",
-    "typescript": "^4.3.2"
+    "nodemon": "^2.0.15",
+    "prisma": "^3.5.0",
+    "typescript": "^4.5.2"
   }
 }

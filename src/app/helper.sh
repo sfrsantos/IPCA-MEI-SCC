@@ -1,14 +1,19 @@
-#update packages
-#!/bin/sh
+#!/bin/bash
+
+export $(grep -v '^#' .env | sed 's/#.*\]//g' |  xargs)
+
 echo "Updating packages..."
-npm update
+#npm update
 echo "Packages are successful update!"
 
 #run migrations
-npx prisma migrate dev
+#npx prisma migrate dev
 
-#start application
+
 echo "Starting application..."
-npm start
-
-
+echo "App running in $APP_MODE mode!"
+if [ "$APP_MODE" == "PROD" ]; then
+  node app.js
+else
+  npm start
+fi

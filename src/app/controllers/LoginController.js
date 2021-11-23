@@ -46,11 +46,11 @@ module.exports = {
       }
     });
 
-    if (!user) return response.status(400).send("Email or password not matches!");
+    if (!user) return response.status(400).send("Username or password not matches!");
 
     const validPW = await bcrypt.compare(request.body.password, user.password);
 
-    if (!validPW) return response.status(400).send("Email or password not matches!");
+    if (!validPW) return response.status(400).send("Username or password not matches!");
 
     const exp = Math.floor(Date.now() / 1000) + (60 * 60);
     const token = jwt.sign({

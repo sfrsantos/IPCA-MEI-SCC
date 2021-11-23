@@ -2,27 +2,40 @@ version: "3"
 
 services:
   db:
-    container_name: scc-db
-    image: postgres
+    container_name: scc_db
+    image: $POSTGRES_IMAGE_NAME
+    env_file:
+      - .env
     ports:
-      - "5432:5432"
+      - $POSTGRES_RUN_PORTS
+    networks:
+      - $POSTGRES_RUN_NETWORK
     volumes:
-      - "mydb:/var/lib/postgresql/data"
+      - $POSTGRES_RUN_VOLUMES
     environment:
-      POSTGRES_USER: scc_user
-      POSTGRES_PASSWORD: scc_secret
-      POSTGRES_DB: db_scc
+      POSTGRES_USER: $POSTGRES_RUN_ENVIRONMENT_USERNAME
+      POSTGRES_PASSWORD: $POSTGRES_RUN_ENVIRONMENT_PASSWORD
+      POSTGRES_DB: $POSTGRES_RUN_ENVIRONMENT_DATABASE
   app:
-    container_name: scc-app
-    build: .
+    container_name: scc_app
+    build: $NODE_DOCKERFILE
+    env_file:
+      - .env
     ports:
-      - "3000:3000"
+      - $NODE_RUN_PORTS_1
+    networks:
+      - $NODE_RUN_NETWORK
     volumes:
-      - "./src/app/:/usr/src/app/"
+      - ".$NODE_RUN_VOLUMES"
     depends_on:
       - db
-
-  
-
 volumes:
   mydb:
+
+networks:
+  scc:
+
+
+
+
+
