@@ -7,7 +7,7 @@ echo "Updating packages..."
 echo "Packages are successful update!"
 
 #run migrations
-#npx prisma migrate dev
+npx prisma migrate dev
 
 
 echo "Starting application..."

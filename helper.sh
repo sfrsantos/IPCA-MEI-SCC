@@ -286,7 +286,7 @@ function registry()
   read -p "Version of image(TAG): " tag
   echo "Trying to registry NodeJS image"
   #Login
-  echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
+  echo $(echo $GITHUB_TOKEN | base64 -Dd) | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
   #Check|Delete
   if [ $(docker image list | grep -w $NODE_IMAGE_NAME | grep -w latest | wc -l) == '0' ]; then
     delete=$(docker image rm -f $NODE_IMAGE_NAME:latest 2>&1)
