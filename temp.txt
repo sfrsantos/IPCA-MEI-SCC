@@ -1,0 +1,7 @@
+locustfile = locustfile.py
+headless = true
+host = :/api/
+expect-workers = 5
+users = 100
+spawn-rate = 10
+run-time = 30m

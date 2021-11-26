@@ -11,9 +11,4 @@ echo "Packages are successful update!"
 
 
 echo "Starting application..."
-echo "App running in $APP_MODE mode!"
-if [ "$APP_MODE" == "PROD" ]; then
-  node app.js
-else
-  npm start
-fi
+echo "App running in $APP_MODE mode!" && [[ $APP_MODE == "PROD" ]] && node app.js || npm start

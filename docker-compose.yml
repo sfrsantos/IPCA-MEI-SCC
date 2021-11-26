@@ -9,7 +9,7 @@ services:
     ports:
       - $POSTGRES_RUN_PORTS
     networks:
-      - $POSTGRES_RUN_NETWORK
+      - $GLOBAL_NETWORK
     volumes:
       - $POSTGRES_RUN_VOLUMES
     environment:
@@ -24,7 +24,7 @@ services:
     ports:
       - $NODE_RUN_PORTS_1
     networks:
-      - $NODE_RUN_NETWORK
+      - $GLOBAL_NETWORK
     volumes:
       - ".$NODE_RUN_VOLUMES"
     depends_on:

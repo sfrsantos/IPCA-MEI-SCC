@@ -1,11 +1,9 @@
-#!/usr/bin/zsh
+#!/usr/bin/bash
 
 ENV_FILE=".env"
 export $(grep -v '^#' $ENV_FILE | sed 's/#.*\]//g' |  xargs)
 
-
-postgres_run_environments="" #inicialize
-postgres_run_environments+=" -e POSTGRES_USER=$POSTGRES_RUN_ENVIRONMENT_USERNAME \
+postgres_run_environments=" -e POSTGRES_USER=$POSTGRES_RUN_ENVIRONMENT_USERNAME \
                              -e POSTGRES_PASSWORD=$POSTGRES_RUN_ENVIRONMENT_PASSWORD \
                              -e POSTGRES_DB=$POSTGRES_RUN_ENVIRONMENT_DATABASE"
 
@@ -18,26 +16,27 @@ function build()
       echo "### Message ### -> Image $NODE_IMAGE_NAME:$NODE_IMAGE_TAG deleted!"
     fi
     if [ $NODE_IMAGE_MODE == 'BUILD' ]; then
-      build=$(docker build -t $NODE_IMAGE_NAME:$NODE_IMAGE_TAG $NODE_DOCKERFILE 2>&1)
+      docker build --no-cache -t $NODE_IMAGE_NAME:$NODE_IMAGE_TAG $NODE_DOCKERFILE
       echo "### Message ### -> $NODE_IMAGE_NAME:$NODE_IMAGE_TAG image generated!"
     else
-      pull=$(docker pull $NODE_IMAGE_NAME:$NODE_IMAGE_TAG 2>&1)
+      docker pull $NODE_IMAGE_NAME:$NODE_IMAGE_TAG
       echo "### Message ### -> $NODE_IMAGE_NAME:$NODE_IMAGE_TAG image downloaded!"
     fi
-    break;;
+    ;;
     'postgres')
     if [ $(docker image list | grep -w $POSTGRES_IMAGE_NAME | grep -w $POSTGRES_IMAGE_TAG | wc -l) == '1' ]; then
       delete=$(docker image remove --force $POSTGRES_IMAGE_NAME 2>&1)
       echo "### Message ### -> Image $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG deleted!"
     fi
     if [ $POSTGRES_IMAGE_MODE == 'BUILD' ]; then
-      build=$(docker build -t $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG $POSTGRES_DOCKERFILE 2>&1)
+      echo build
+      docker build --no-cache -t $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG $POSTGRES_DOCKERFILE
       echo "### Message ### -> $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG image generated!"
     else
-      pull=$(docker pull $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG 2>&1)
+      docker pull $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG
       echo "### Message ### -> $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG image downloaded!"
     fi
-    break;;
+    ;;
   esac
 }
 
@@ -62,7 +61,7 @@ function run()
   case $1 in 
     "nodejs") #nodejs
       #Build if not image exists
-      if [ $(docker image list | grep -w $POSTGRES_IMAGE_NAME | grep -w $POSTGRES_IMAGE_TAG | wc -l) == '0' ]; then
+      if [ $(docker image list | grep -w $NODE_IMAGE_NAME | grep -w $NODE_IMAGE_TAG | wc -l) == '0' ]; then
         build nodejs
       fi
       #Run dependencies
@@ -75,18 +74,18 @@ function run()
         echo "### Message ### -> Container $NODE_RUN_NAME deleted!"
       fi
       #Create network if not exists
-      if [ $(docker network list | grep -w $NODE_RUN_NETWORK | wc -l) == '0' ]; then
-        createNetwork=$(docker network create $NODE_RUN_NETWORK)
+      if [ $(docker network list | grep -w $GLOBAL_NETWORK | wc -l) == '0' ]; then
+        createNetwork=$(docker network create $GLOBAL_NETWORK)
       fi
       #Run container
-      run=$(docker run -p $NODE_RUN_PORTS_1 -v $(pwd)$NODE_RUN_VOLUMES --network $NODE_RUN_NETWORK -d --name $NODE_RUN_NAME $NODE_IMAGE_NAME:$NODE_IMAGE_TAG)
+      run=$(docker run -p "$NODE_RUN_PORTS_1" -v "$(pwd)$NODE_RUN_VOLUMES_1" -v "$NODE_RUN_VOLUMES_2" --network $GLOBAL_NETWORK -d --name $NODE_RUN_NAME $NODE_IMAGE_NAME:$NODE_IMAGE_TAG)
       #Checks if container are running
       if [ $(docker ps | grep -w $NODE_RUN_NAME | wc -l) == '1' ];then
         echo "### Message ### -> Container $NODE_RUN_NAME was created!"
       else
         echo "### Message ### -> An error occurred creating container $NODE_RUN_NAME"
       fi
-      break;;
+      ;;
     "postgres")
       #Build if not image exists
       if [ $(docker image list | grep -w $POSTGRES_IMAGE_NAME | grep -w $POSTGRES_IMAGE_TAG | wc -l) == '0' ]; then
@@ -104,17 +103,18 @@ function run()
       if [ $(docker volume list | grep -w mydb | wc -l) == '0' ]; then
         createVolume=$(docker volume create mydb)
       fi
-      if [ $(docker network list | grep -w $POSTGRES_RUN_NETWORK | wc -l) == '0' ]; then
-        createNetwork=$(docker network create $POSTGRES_RUN_NETWORK)
+      if [ $(docker network list | grep -w $GLOBAL_NETWORK | wc -l) == '0' ]; then
+        createNetwork=$(docker network create $GLOBAL_NETWORK)
       fi
       #Run container
-      run=$(docker run -p $POSTGRES_RUN_PORTS -v "$POSTGRES_RUN_VOLUMES" $postgres_run_environments --network $POSTGRES_RUN_NETWORK  -d --name $POSTGRES_RUN_NAME $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG) 
+      run=$(docker run -p $POSTGRES_RUN_PORTS -v "$POSTGRES_RUN_VOLUMES" $postgres_run_environments --network $GLOBAL_NETWORK  -d --name $POSTGRES_RUN_NAME $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG) 
       #Checks if container are running
       if [ $(docker ps | grep -w $POSTGRES_RUN_NAME | wc -l) == '1' ];then
         echo "### Message ### -> Container $POSTGRES_RUN_NAME was created!"
       else
         echo "### Message ### -> An error occurred creating container $POSTGRES_RUN_NAME"
       fi
+      ;;
   esac
 }
 
@@ -182,7 +182,7 @@ function kubernetes()
         echo "2 - Apply Scale(Replicaset)"
         echo "3 - Apply Service(Load Balance)"
         echo "4 - All"
-        echo "5 - Delete deployment"
+        echo "5 - Delete deployment and service"
         echo "0 - Exit"
 
         read -n 2 -p "Choose an option: " option
@@ -218,8 +218,16 @@ function kubernetes()
         echo "### Message ### -> All are updated!"
     elif [ "$option" == "5" ];then
         apply=$(kubectl delete deployment nodejs-api)
-        echo "### Message ### -> Deployment deleted!"
+        apply=$(kubectl delete svc nodejs-api)
+        echo "### Message ### -> Deployment and Service deleted!"
     fi
+}
+
+function locust()
+{
+  delete=$(docker rm -f scc_test)
+  replace=$(sed -E "s/host.*/host = http:\/\/$LOCUST_APP_HOST:$LOCUST_APP_PORT\/api\//" ./test/sample.conf > ./test/.locust.conf)
+  run=$(docker run -p $LOCUST_RUN_PORT -v $(pwd)$LOCUST_RUN_VOLUME --network $GLOBAL_NETWORK --name scc_test -d $LOCUST_IMAGE_NAME:$LOCUST_IMAGE_TAG)
 }
 
 function chooseDelete()
@@ -309,11 +317,12 @@ function menu {
         echo "4 - Delete image"
         echo "5 - Registry Container"
         echo "6 - Kubernetes"
+        echo "7 - Locust"
         echo "0 - Exit"
 
         read -n 2 -p "Choose an option: " option
 
-        if [ "$option" != "0" ] && [ "$option" != "1" ] && [ "$option" != "2" ] && [ "$option" != "3" ] && [ "$option" != "4" ] && [ "$option" != "5" ] && [ "$option" != "6" ];then
+        if [ "$option" != "0" ] && [ "$option" != "1" ] && [ "$option" != "2" ] && [ "$option" != "3" ] && [ "$option" != "4" ] && [ "$option" != "5" ] && [ "$option" != "6" ] && [ "$option" != "7" ];then
             option=""
             echo "Invalid Option!"
         fi
@@ -336,6 +345,8 @@ function menu {
         registry 
     elif [ "$option" == "6" ];then
         kubernetes
+    elif [ "$option" == "7" ];then
+        locust
     fi
 }
 
