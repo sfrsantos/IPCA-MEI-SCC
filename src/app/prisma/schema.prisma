@@ -17,3 +17,11 @@ model User{
   email String @unique
   password String
 }
+
+model Blacklist{
+  token String
+  expiration Int
+
+  @@id([token])
+  @@index([expiration], name: "black_expiration")
+}

@@ -3,7 +3,8 @@ const env = require("dotenv");
 const app = express();
 const auth = require('./routes/auth')
 const user = require('./routes/user')
-const jwtVerify = require('./routes/verifyToken')
+const jwtVerify = require('./routes/verifyToken');
+const LoginController = require('./controllers/LoginController');
 
 //Test
 app.use(express.json())
@@ -11,6 +12,7 @@ app.get('/api', (req, res) => { res.status(200).json({ "message": 'All its fine!
 
 //routes
 app.use("/api/auth", auth);
+app.get("/api/auth/logout",jwtVerify, LoginController.logout)
 app.use("/api/profile", jwtVerify, user);
 
 

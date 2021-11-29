@@ -58,5 +58,23 @@ module.exports = {
       data: { id: user.id }
     }, process.env.TOKEN);
     response.header("auth-token", token).json({ exp, token });
+  },
+  async logout(request, response){
+    try {
+      const userlogged = jwt.verify(request.header('token'), process.env.TOKEN)
+      const token = request.header("token")
+      const expiration = userlogged.exp
+
+      const newEntry = prisma.blacklist.create({
+        data:{
+          token,
+          expiration
+        }
+      }).then(()=>{console.log("Token "+ token +" are invalidated now")});  
+    } catch (error) {
+      return response.status(500).json({ message:"An error are occurred"});
+    }
+    
+    return response.status(200).json({ message:"User successful logout"});
   }
 }
