@@ -11,15 +11,3 @@ spec:
           targetPort: 3000
     selector:
         app: nodejs-api
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql-db-svc
-spec: 
-  type: ExternalName
-  externalName: 127.0.0.1
-  selector:
-        app: nodejs-api

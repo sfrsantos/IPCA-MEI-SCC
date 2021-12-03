@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: scc-app
-        image: ghcr.io/sfrsantos/ipca-mei-scc/nodejs-app-image:latest
+        image: node-scc:latest
         imagePullPolicy: Never
         resources:
           requests:

@@ -11,49 +11,46 @@ function build()
 {
   case $1 in 
     'nodejs')
-    if [ $(docker image list | grep -w $NODE_IMAGE_NAME | grep -w $NODE_IMAGE_TAG | wc -l) == '1' ]; then
-      delete=$(docker image remove --force $NODE_IMAGE_NAME)
-      echo "### Message ### -> Image $NODE_IMAGE_NAME:$NODE_IMAGE_TAG deleted!"
-    fi
-    if [ $NODE_IMAGE_MODE == 'BUILD' ]; then
-      docker build --no-cache -t $NODE_IMAGE_NAME:$NODE_IMAGE_TAG $NODE_DOCKERFILE
-      echo "### Message ### -> $NODE_IMAGE_NAME:$NODE_IMAGE_TAG image generated!"
-    else
-      docker pull $NODE_IMAGE_NAME:$NODE_IMAGE_TAG
-      echo "### Message ### -> $NODE_IMAGE_NAME:$NODE_IMAGE_TAG image downloaded!"
-    fi
+    ### Delete image if exists
+    docker image list | grep -w $NODE_IMAGE_NAME | grep -w $NODE_IMAGE_TAG >> /dev/null 2>&1 \
+    && docker image remove --force $NODE_IMAGE_NAME >> /dev/null 2>&1 \
+    && echo "### Message ### -> Image $NODE_IMAGE_NAME:$NODE_IMAGE_TAG deleted!"
+    ### Build mode
+    (echo $NODE_IMAGE_MODE | grep "BUILD"  >> /dev/null 2>&1 \
+    && docker build --no-cache -t $NODE_IMAGE_NAME:$NODE_IMAGE_TAG $NODE_DOCKERFILE \
+    && echo "### Message ### -> $NODE_IMAGE_NAME:$NODE_IMAGE_TAG image generated!") \
+    ||
+    (docker pull $NODE_IMAGE_NAME:$NODE_IMAGE_TAG \
+    && echo "### Message ### -> $NODE_IMAGE_NAME:$NODE_IMAGE_TAG image downloaded!")
     ;;
     'postgres')
-    if [ $(docker image list | grep -w $POSTGRES_IMAGE_NAME | grep -w $POSTGRES_IMAGE_TAG | wc -l) == '1' ]; then
-      delete=$(docker image remove --force $POSTGRES_IMAGE_NAME 2>&1)
-      echo "### Message ### -> Image $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG deleted!"
-    fi
-    if [ $POSTGRES_IMAGE_MODE == 'BUILD' ]; then
-      echo build
-      docker build --no-cache -t $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG $POSTGRES_DOCKERFILE
-      echo "### Message ### -> $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG image generated!"
-    else
-      docker pull $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG
-      echo "### Message ### -> $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG image downloaded!"
-    fi
+    ### Delete image if exists
+    docker image list | grep -w $POSTGRES_IMAGE_NAME | grep -w $POSTGRES_IMAGE_TAG >> /dev/null 2>&1 \
+    && docker image remove --force $POSTGRES_IMAGE_NAME >> /dev/null 2>&1 \
+    && echo "### Message ### -> Image $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG deleted!"
+    ### Build mode
+    (echo $POSTGRES_IMAGE_MODE | grep "BUILD"  >> /dev/null 2>&1 \
+    && docker build --no-cache -t $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG $POSTGRES_DOCKERFILE \
+    && echo "### Message ### -> $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG image generated!") \
+    ||
+    (docker pull $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG \
+    &&echo "### Message ### -> $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG image downloaded!")
     ;;
   esac
 }
 
 function delete_image()
 {
-  if [ $(docker image list | grep -w $1 | grep -w $2 | wc -l) == '1' ]; then
-    delete=$(docker image rm --force $1:$2)
-    echo "### Message ### -> Image $1:$2 deleted!"
-  fi
+  docker image list | grep -w $1 | grep -w $2 >> /dev/null 2>&1 \
+  && docker image rm --force $1:$2 >> /dev/null 2>&1 \
+  && echo "### Message ### -> Container $1 deleted!"
 }
 
 function delete_container()
 {
-  if [ $(docker ps -a | grep -w $1 | wc -l) == '1' ]; then
-    delete=$(docker rm -f $1)
-    echo "### Message ### -> Container $1 deleted!"
-  fi
+  docker ps -a | grep -w $1 >> /dev/null 2>&1 \
+  && docker rm -f $1 >> /dev/null 2>&1 \
+  && echo "### Message ### -> Container $1 deleted!"
 }
 
 function run()
@@ -61,59 +58,43 @@ function run()
   case $1 in 
     "nodejs") #nodejs
       #Build if not image exists
-      if [ $(docker image list | grep -w $NODE_IMAGE_NAME | grep -w $NODE_IMAGE_TAG | wc -l) == '0' ]; then
-        build nodejs
-      fi
+      docker image list | grep $NODE_IMAGE_NAME >> /dev/null 2>&1 || build nodejs
       #Run dependencies
-      if [ $NODE_RUN_DEPENDENCIES != "" ]; then
-        run $NODE_RUN_DEPENDENCIES
-      fi
+      echo a"$NODE_RUN_DEPENDENCIES"a | grep aa >> /dev/null 2>&1 || run $NODE_RUN_DEPENDENCIES
       #Delete container if exists
-      if [ $(docker ps -a | grep -w $NODE_RUN_NAME | wc -l) == '1' ];then
-        delete=$(docker rm -f $NODE_RUN_NAME)
-        echo "### Message ### -> Container $NODE_RUN_NAME deleted!"
-      fi
+      docker ps | grep $NODE_RUN_NAME >> /dev/null 2>&1 \
+      && delete=$(docker rm -f $NODE_RUN_NAME) \
+      && echo "### Message ### -> Container $NODE_RUN_NAME deleted!"
       #Create network if not exists
-      if [ $(docker network list | grep -w $GLOBAL_NETWORK | wc -l) == '0' ]; then
-        createNetwork=$(docker network create $GLOBAL_NETWORK)
-      fi
+      docker network list | grep -w $GLOBAL_NETWORK >> /dev/null 2>&1 \
+      || docker network create $GLOBAL_NETWORK >> /dev/null 2>&1
       #Run container
-      run=$(docker run -p "$NODE_RUN_PORTS_1" -v "$(pwd)$NODE_RUN_VOLUMES_1" -v "$NODE_RUN_VOLUMES_2" --network $GLOBAL_NETWORK -d --name $NODE_RUN_NAME $NODE_IMAGE_NAME:$NODE_IMAGE_TAG)
+      docker run -p "$NODE_RUN_PORTS_1" -v "$(pwd)$NODE_RUN_VOLUMES" --network $GLOBAL_NETWORK -d --name $NODE_RUN_NAME $NODE_IMAGE_NAME:$NODE_IMAGE_TAG >> /dev/null 2>&1
       #Checks if container are running
-      if [ $(docker ps | grep -w $NODE_RUN_NAME | wc -l) == '1' ];then
-        echo "### Message ### -> Container $NODE_RUN_NAME was created!"
-      else
-        echo "### Message ### -> An error occurred creating container $NODE_RUN_NAME"
-      fi
+      docker ps | grep $NODE_RUN_NAME >> /dev/null 2>&1 && echo "### Message ### -> Container $NODE_RUN_NAME was created!" \
+      || echo "### Message ### -> An error occurred creating container $NODE_RUN_NAME"
       ;;
     "postgres")
       #Build if not image exists
-      if [ $(docker image list | grep -w $POSTGRES_IMAGE_NAME | grep -w $POSTGRES_IMAGE_TAG | wc -l) == '0' ]; then
-        build postgres
-      fi
+      docker image list | grep -w $POSTGRES_IMAGE_NAME >> /dev/null 2>&1 \
+      || build postgres
       #Run dependencies
-      if [[ $POSTGRES_RUN_DEPENDENCIES != "" ]]; then
-        run $POSTGRES_RUN_DEPENDENCIES
-      fi
+      echo a"$POSTGRES_RUN_DEPENDENCIES"a | grep aa >> /dev/null 2>&1 || run $POSTGRES_RUN_DEPENDENCIES
       #Delete container if exists
-      if [ $(docker ps -a | grep -w $POSTGRES_RUN_NAME | wc -l) == '1' ];then
-        delete=$(docker rm -f $POSTGRES_RUN_NAME)
-        echo "### Message ### -> Container $POSTGRES_RUN_NAME deleted!"
-      fi
-      if [ $(docker volume list | grep -w mydb | wc -l) == '0' ]; then
-        createVolume=$(docker volume create mydb)
-      fi
-      if [ $(docker network list | grep -w $GLOBAL_NETWORK | wc -l) == '0' ]; then
-        createNetwork=$(docker network create $GLOBAL_NETWORK)
-      fi
+      docker ps | grep $POSTGRES_RUN_NAME >> /dev/null 2>&1 \
+      && delete=$(docker rm -f $POSTGRES_RUN_NAME) \
+      && echo "### Message ### -> Container $POSTGRES_RUN_NAME deleted!"
+      #Create volume if not exists
+      docker volume list | grep -w mydb >> /dev/null 2>&1 \
+      || docker volume create mydb >> /dev/null 2>&1
+      #Create network if not exists
+      docker network list | grep -w $GLOBAL_NETWORK >> /dev/null 2>&1 \
+      || docker network create $GLOBAL_NETWORK >> /dev/null 2>&1
       #Run container
       run=$(docker run -p $POSTGRES_RUN_PORTS -v "$POSTGRES_RUN_VOLUMES" $postgres_run_environments --network $GLOBAL_NETWORK  -d --name $POSTGRES_RUN_NAME $POSTGRES_IMAGE_NAME:$POSTGRES_IMAGE_TAG) 
       #Checks if container are running
-      if [ $(docker ps | grep -w $POSTGRES_RUN_NAME | wc -l) == '1' ];then
-        echo "### Message ### -> Container $POSTGRES_RUN_NAME was created!"
-      else
-        echo "### Message ### -> An error occurred creating container $POSTGRES_RUN_NAME"
-      fi
+      docker ps | grep $POSTGRES_RUN_NAME >> /dev/null 2>&1 && echo "### Message ### -> Container $POSTGRES_RUN_NAME was created!" \
+      || echo "### Message ### -> An error occurred creating container $POSTGRES_RUN_NAME"
       ;;
   esac
 }
@@ -226,8 +207,11 @@ function kubernetes()
 function locust()
 {
   delete=$(docker rm -f scc_test)
-  replace=$(sed -E "s/host.*/host = http:\/\/$LOCUST_APP_HOST:$LOCUST_APP_PORT\/api\//" ./test/sample.conf > ./test/.locust.conf)
+  replace=$(sed -E "s/host.*/host = http:\/\/$LOCUST_APP_HOST:$LOCUST_APP_PORT\/api\//" ./test/sample.conf > ./test/.locust.conf  2>&1)
   run=$(docker run -p $LOCUST_RUN_PORT -v $(pwd)$LOCUST_RUN_VOLUME --network $GLOBAL_NETWORK --name scc_test -d $LOCUST_IMAGE_NAME:$LOCUST_IMAGE_TAG)
+  #check startup
+  docker ps | grep scc_test >> /dev/null 2>&1 && echo "### Message ### -> Locust its UP!" \
+  || echo "### Message ### -> An error occurred on startup"
 }
 
 function chooseDelete()
@@ -286,24 +270,29 @@ function registry()
   read -p "Version of image(TAG): " tag
   echo "Trying to registry NodeJS image"
   #Login
-  echo $(echo $GITHUB_TOKEN | base64 --decode) | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-  #Check|Delete
-  if [ $(docker image list | grep -w $NODE_IMAGE_NAME | grep -w latest | wc -l) == '0' ]; then
-    delete=$(docker image rm -f $NODE_IMAGE_NAME:latest 2>&1)
-  fi
-  #Build
-  if [ $(docker image list | grep -w $NODE_IMAGE_NAME | grep -w $tag | wc -l) == '0' ]; then
-    build=$(docker build -t $NODE_IMAGE_NAME:$tag $NODE_DOCKERFILE 2>&1)
-  fi
-  build=$(docker build -t $NODE_IMAGE_NAME:latest $NODE_DOCKERFILE 2>&1)
-  #Registry
-  registry=$(docker push $NODE_IMAGE_NAME:$tag 2>&1)
-  registry=$(docker push $NODE_IMAGE_NAME:latest 2>&1)
-  #Delete
+  echo $GITHUB_TOKEN | base64 --decode | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin >> /dev/null 2>&1 \
+  && echo "### Message ### -> Login Succeed!" \
+  || (echo "### Message ### -> An error occurred on login" && exit 1)
+  echo "### Message ### -> Generating images to push..."
+  #Check||Delete
+  docker image list | grep -w $NODE_IMAGE_NAME | grep -w latest >> /dev/null 2>&1 \
+  || docker image rm -f $NODE_IMAGE_NAME:latest >> /dev/null 2>&1
+  #Check||Build
+  docker image list | grep -w $NODE_IMAGE_NAME | grep -w $tag >> /dev/null 2>&1 \
+  || docker build -t $NODE_IMAGE_NAME:$tag $NODE_DOCKERFILE >> /dev/null 2>&1
+  #Build latest
+  docker build -t $NODE_IMAGE_NAME:latest $NODE_DOCKERFILE >> /dev/null 2>&1
+  #Registry personalized tag and latest
+  echo "### Message ### -> Pushing images..."
+  docker push $NODE_IMAGE_NAME:$tag >> /dev/null 2>&1 && echo "### Message ### -> $NODE_IMAGE_NAME:$tag are registered!" \
+  || (echo "### Message ### -> There was an error registering the image $NODE_IMAGE_NAME:$tag!" && exit 1) 
+  docker push $NODE_IMAGE_NAME:latest >> /dev/null 2>&1 && echo "### Message ### -> $NODE_IMAGE_NAME:latest are registered!" \
+  || (echo "### Message ### -> There was an error registering the image $NODE_IMAGE_NAME:latest!" && exit 1)
+  #Delete personalized tag and latest
+  echo "### Message ### -> Delete images..."
   delete_image $NODE_IMAGE_NAME $tag
   delete_image $NODE_IMAGE_NAME "latest"
-  echo "### Message ### -> $NODE_IMAGE_NAME:$tag are registered!"
-  echo "### Message ### -> $NODE_IMAGE_NAME:latest are registered!"
+  echo "### Message ### -> Finished"
 }
 
 function menu {

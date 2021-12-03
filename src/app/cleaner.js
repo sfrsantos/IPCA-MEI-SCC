@@ -18,12 +18,19 @@ console.log = function(d) { //
 
 try {
     const query = "delete from PUBLIC.\"Blacklist\" where expiration <= " + Math.floor(Date.now() / 1000)
-    const del = prisma.$queryRawUnsafe(query).then(() => {})
+    
+    const del = prisma.$queryRawUnsafe(query)
+    .then(() => {
+      console.log("[ "+getDateHour()+" ] -> Invalid tokens were cleared")
+    })
+    .catch((e) => {
+      if(String(e).includes('Can\'t reach database server at'))
+        console.log("[ "+getDateHour()+" ] -> An error occurred on cleanner : Connection problem")
+      else  
+        console.log("[ "+getDateHour()+" ] -> An error occurred on cleanner : " + e)
+      })
   } catch (e) {
     console.log("[ "+getDateHour()+" ] -> An error occurred on cleanner : " + e)
-  }
-  finally{ 
-    console.log("[ "+getDateHour()+" ] -> Invalid tokens were cleared")
   }
 
 
