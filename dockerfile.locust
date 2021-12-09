@@ -1,0 +1,22 @@
+FROM ubuntu:20.04
+
+### Data
+WORKDIR /locust
+COPY ./test .
+
+### Instalation
+RUN apt-get update && apt-get -y install  \
+    python3-pip \
+    vim \
+    net-tools \
+    iputils-ping
+RUN pip3 install locust
+
+### Environment
+ENV LOCUST_HOSTNAME=0.0.0.0
+ENV LOCUST_PORT=8089
+ENV LOCUST_FILE=locustfile.py
+ENV LOCUST_CONFIG=.locust.conf
+
+CMD locust --web-host=${LOCUST_HOSTNAME} --web-port ${LOCUST_PORT} --config ${LOCUST_CONFIG} -f ${LOCUST_FILE}
+

@@ -4,17 +4,26 @@ const { textSpanContainsPosition } = require("typescript");
 
 module.exports = {
   async test(request, response){
-    var fib = function(n) {
-      if (n === 1) {
-        return [0, 1];
-      } else {
-        var arr = fib(n - 1);
-        arr.push(arr[arr.length - 1] + arr[arr.length - 2]);
-        return arr;
-      }
-    };
+     var ePrimo = (n) => {
+        let i, divisores = 0
 
-    return response.status(200).json({ message:"fib = " + fib(request.query.fib_number)});
+        for(i = 1; i <= n; i++){
+          if(n % i == 0)
+            divisores++
+        }
+        if(divisores == 2)
+          return 1 // n é primo
+        else
+          return 0 // n não é primo
+      };
+    
+    let aux = []
+    for(let i = 0;i < request.query.number;i++){
+      if(ePrimo(i))
+        aux.push(i)
+    }
+
+    return response.status(200).json({ resultado: aux});
   }
 
 

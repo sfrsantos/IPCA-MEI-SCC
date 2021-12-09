@@ -1,12 +1,9 @@
 FROM node:14
 
 ### Data of the app
-COPY ./src/app/ /usr/src/app
 WORKDIR /usr/src/app
-RUN rm -rf node_modules package-lock.json yarn.lock
-RUN chmod -R 777 /usr/src/app
-RUN npm cache clear --force
-RUN npm i
+COPY ./src/app/ .
+RUN rm -rf node_modules && rm ./package-lock.json && npm install
 
 ### Installations
 RUN apt-get update && apt-get install -y \

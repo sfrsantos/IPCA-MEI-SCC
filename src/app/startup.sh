@@ -3,11 +3,12 @@
 export $(grep -v '^#' .env | sed 's/#.*\]//g' |  xargs)
 
 ## Init
-#service cron start
-ls -lah | grep node_modules >> /dev/null 2>&1 || npm i  \
+service cron start
+#caso não exista node-modules -> instala packages
+ls -lah | grep node_modules >> /dev/null 2>&1 || npm install
 
 #run migrations
-#npx prisma migrate dev
+npx prisma migrate dev
 
 ## Run App
 echo "Starting application..."

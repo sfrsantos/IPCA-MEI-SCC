@@ -196,7 +196,7 @@ function kubernetes()
         apply=$(kubectl apply -f ./kube/deployment.yaml)
         apply=$(kubectl apply -f ./kube/scale.yaml)
         apply=$(kubectl apply -f ./kube/service.yaml)
-        echo "### Message ### -> All are updated!"
+        echo "### Message ### -> All are updated (deployment, replicaset, load balancer)!"
     elif [ "$option" == "5" ];then
         apply=$(kubectl delete deployment nodejs-api)
         apply=$(kubectl delete svc nodejs-api)
@@ -206,9 +206,11 @@ function kubernetes()
 
 function locust()
 {
-  delete=$(docker rm -f scc_test)
-  replace=$(sed -E "s/host.*/host = http:\/\/$LOCUST_APP_HOST:$LOCUST_APP_PORT\/api\//" ./test/sample.conf > ./test/.locust.conf  2>&1)
-  run=$(docker run -p $LOCUST_RUN_PORT -v $(pwd)$LOCUST_RUN_VOLUME --network $GLOBAL_NETWORK --name scc_test -d $LOCUST_IMAGE_NAME:$LOCUST_IMAGE_TAG)
+  #locust --version | grep 'command not found'
+  #delete=$(docker rm -f scc_test)
+  #replace=$(sed -E "s/host.*/host = http:\/\/$LOCUST_APP_HOST:$LOCUST_APP_PORT\/api\//" ./test/sample.conf > ./test/.locust.conf  2>&1)
+  #run=$(docker run -p $LOCUST_RUN_PORT -v $(pwd)$LOCUST_RUN_VOLUME --network host --name scc_test -d $LOCUST_IMAGE_NAME:$LOCUST_IMAGE_TAG -f $LOCUST_FILE)
+  #run=$(docker run -v $(pwd)$LOCUST_RUN_VOLUME --network host --name scc_test -d $LOCUST_IMAGE_NAME:$LOCUST_IMAGE_TAG -f $LOCUST_FILE)
   #check startup
   docker ps | grep scc_test >> /dev/null 2>&1 && echo "### Message ### -> Locust its UP!" \
   || echo "### Message ### -> An error occurred on startup"

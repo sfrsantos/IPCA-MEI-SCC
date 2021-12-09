@@ -15,8 +15,7 @@ app.get('/api', (req, res) => { res.status(200).json({ "message": 'All its fine!
 app.use("/api/auth", auth);
 app.get("/api/auth/logout",jwtVerify, LoginController.logout)
 app.use("/api/profile", jwtVerify, user);
-//app.get("/api/test", TestController.test)
-
+app.get("/api/test", TestController.test)
 
 //Env
 env.config();

@@ -7,23 +7,17 @@ spec:
         apiVersion: apps/v1
         kind: Deployment
         name: nodejs-api
-    minReplicas: 3
+    minReplicas: 2
     maxReplicas: 5
     behavior:
         scaleDown:
           stabilizationWindowSeconds: 300
         scaleUp:
-          stabilizationWindowSeconds: 10
+          stabilizationWindowSeconds: 5
     metrics:
         - type: Resource
           resource:
               name: cpu
               target:
                   type: Utilization
-                  averageUtilization: 60
-        - type: Resource
-          resource:
-              name: memory
-              target:
-                  type: Utilization
-                  averageUtilization: 60
+                  averageUtilization: 10

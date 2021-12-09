@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  db:
+  scc-db:
     container_name: scc_db
     image: $POSTGRES_IMAGE_NAME
     env_file:
@@ -16,7 +16,7 @@ services:
       POSTGRES_USER: $POSTGRES_RUN_ENVIRONMENT_USERNAME
       POSTGRES_PASSWORD: $POSTGRES_RUN_ENVIRONMENT_PASSWORD
       POSTGRES_DB: $POSTGRES_RUN_ENVIRONMENT_DATABASE
-  app:
+  scc-app:
     container_name: scc_app
     build: $NODE_DOCKERFILE
     env_file:
@@ -28,7 +28,7 @@ services:
     volumes:
       - ".$NODE_RUN_VOLUMES"
     depends_on:
-      - db
+      - scc-db
 volumes:
   mydb:
 

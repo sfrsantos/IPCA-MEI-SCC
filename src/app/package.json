@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "Trabalho de SCC",
   "scripts": {
-    "dev": "nodemon app.js",
-    "prod": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prod": "node --stack-size=65500 /usr/src/app/app.js",
+    "dev": "nodemon /usr/src/app/app.js"
   },
   "author": "Grupo 1",
   "license": "ISC",

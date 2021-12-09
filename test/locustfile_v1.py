@@ -13,6 +13,5 @@ class ApiTest(HttpUser):
 
     @task
     def test(self):
-        randNumber=random.randint(7000, 10000)
-        print(randNumber)
-        response = self.client.get("test?fib_number="+str(randNumber))
+        randNumber=random.randint(10000, 20000)
+        response = self.client.get("test?number="+str(randNumber))
